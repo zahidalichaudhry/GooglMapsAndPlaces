@@ -1,6 +1,7 @@
 package com.itpvt.googlmapsandplaces;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -26,6 +27,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -37,6 +40,7 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.PlaceDetectionClient;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -59,6 +63,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
+    private static final int PLACE_PICKER_REQUEST = 1;
     private static final LatLngBounds LAT_LNG_BOUNDS= new LatLngBounds(
             new LatLng(-40,-168),new LatLng(71,136)
     );
@@ -68,7 +73,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Boolean mLoactionPermissionGranted = false;
 
     private AutoCompleteTextView mSearch;
-    private ImageView mGps,info;
+    private ImageView mGps,info, mPlacePicker;
 
     private PlaceAutoCompleteAdapter mplaceAutoCompleteAdapter;
     private PlaceAutocompleteAdapter1 mplaceAutoCompleteAdapter1;
@@ -114,6 +119,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         mSearch=(AutoCompleteTextView)findViewById(R.id.input_search);
         mGps=(ImageView)findViewById(R.id.gps);
         info=(ImageView)findViewById(R.id.info);
+        mPlacePicker = (ImageView) findViewById(R.id.place_picker);
         getLocationPermission();
         // Construct a GeoDataClient.
         mGeoDataClient = Places.getGeoDataClient(this, null);
@@ -142,6 +148,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 }
             }
 
+        });
+        mPlacePicker.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+
+                try {
+                    startActivityForResult(builder.build(MapActivity.this), PLACE_PICKER_REQUEST);
+                } catch (GooglePlayServicesRepairableException e) {
+                    Log.e(TAG, "onClick: GooglePlayServicesRepairableException: " + e.getMessage() );
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    Log.e(TAG, "onClick: GooglePlayServicesNotAvailableException: " + e.getMessage() );
+                }
+            }
         });
     }
     private void init()
@@ -178,7 +199,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
         hidesoftinputkeyboard();
     }
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PLACE_PICKER_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                Place place = PlacePicker.getPlace(this, data);
 
+                PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
+                        .getPlaceById(mGoogleApiClient, place.getId());
+                placeResult.setResultCallback(mUpdatePlaceDetailCallback);
+            }
+        }
+    }
     private void geoLocate()
     {
         Log.d(TAG,"Geoloacte:geolocate");
@@ -242,6 +273,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         Log.d(TAG,"moveCamera:moving the camera to:lat"+latLng.latitude+",lng:"+latLng.longitude);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoom));
         mMap.clear();
+        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this));
         if (placeInfo!=null)
         {
             try {

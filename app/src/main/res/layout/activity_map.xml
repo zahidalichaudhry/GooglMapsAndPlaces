@@ -77,5 +77,13 @@
 
     </android.support.constraint.ConstraintLayout>
 
-
+    <ImageView
+        android:id="@+id/place_picker"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_placepicker"
+        app:layout_constraintStart_toStartOf="@+id/info"
+        app:layout_constraintTop_toBottomOf="@+id/info" />
 </android.support.constraint.ConstraintLayout>
