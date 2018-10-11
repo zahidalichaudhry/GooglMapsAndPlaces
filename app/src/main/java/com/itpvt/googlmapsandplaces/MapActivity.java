@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -26,9 +27,14 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.GeoDataClient;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.PlaceDetectionClient;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -40,6 +46,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.itpvt.googlmapsandplaces.Models.PlaceInfo;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,6 +74,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GoogleApiClient mGoogleApiClient;
     private GeoDataClient mGeoDataClient;
     private PlaceDetectionClient mPlaceDetectionClient;
+    private PlaceInfo mPlace;
+
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
@@ -167,7 +176,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         {
             Address address=list.get(0);
             Log.d(TAG,"Geoloacte:location found:"+address.toString());
-            Toast.makeText(MapActivity.this,address.toString(),Toast.LENGTH_LONG).show();
+//            Toast.makeText(MapActivity.this,address.toString(),Toast.LENGTH_LONG).show();
             moveCamera(new LatLng(address.getLatitude(),address.getLongitude()),DEFAULT_ZOOM
                     ,address.getAddressLine(0));
         }
@@ -283,6 +292,30 @@ private void moveCamera(LatLng latLng,float zoom,String title)
     {
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
+/////////////////Google Places Api autocomplete Suggestions/////////////////////////
+    private AdapterView.OnItemClickListener mAutoComplteClickListner=new AdapterView.OnItemClickListener() {
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
+        hidesoftinputkeyboard();
+        final AutocompletePrediction item=mplaceAutoCompleteAdapter1.getItem(i);
+        final String placeId=item.getPlaceId();
+        PendingResult<PlaceBuffer> placeResult=Places.GeoDataApi
+                .getPlaceById(mGoogleApiClient,placeId);
+        placeResult.setResultCallback(mUpdatePlaceDetailCallback);
+    }
+};
+private ResultCallback<PlaceBuffer> mUpdatePlaceDetailCallback=new ResultCallback<PlaceBuffer>() {
+    @Override
+    public void onResult(@NonNull PlaceBuffer places) {
+        if (!places.getStatus().isSuccess())
+        {
+            Toast.makeText(MapActivity.this, "Failed Place Query"+places.getStatus().toString(), Toast.LENGTH_LONG).show();
+            places.release();
+            return;
+        }
+        final Place place=places.get(0);
 
+    }
+};
 }
