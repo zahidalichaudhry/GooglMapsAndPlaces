@@ -43,6 +43,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -67,7 +68,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Boolean mLoactionPermissionGranted = false;
 
     private AutoCompleteTextView mSearch;
-    private ImageView mGps;
+    private ImageView mGps,info;
 
     private PlaceAutoCompleteAdapter mplaceAutoCompleteAdapter;
     private PlaceAutocompleteAdapter1 mplaceAutoCompleteAdapter1;
@@ -75,6 +76,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GeoDataClient mGeoDataClient;
     private PlaceDetectionClient mPlaceDetectionClient;
     private PlaceInfo mPlace;
+    private Marker mMaker;
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -111,6 +113,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_map);
         mSearch=(AutoCompleteTextView)findViewById(R.id.input_search);
         mGps=(ImageView)findViewById(R.id.gps);
+        info=(ImageView)findViewById(R.id.info);
         getLocationPermission();
         // Construct a GeoDataClient.
         mGeoDataClient = Places.getGeoDataClient(this, null);
@@ -122,6 +125,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             public void onClick(View view) {
                 getDeviceLocation();
             }
+        });
+        info.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG, "onClick: clicked place info");
+                try{
+                    if(mMaker.isInfoWindowShown()){
+                        mMaker.hideInfoWindow();
+                    }else{
+                        Log.d(TAG, "onClick: place info: " + mPlace.toString());
+                        mMaker.showInfoWindow();
+                    }
+                }catch (NullPointerException e){
+                    Log.e(TAG, "onClick: NullPointerException: " + e.getMessage() );
+                }
+            }
+
         });
     }
     private void init()
@@ -135,6 +155,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .build();
 //        mplaceAutoCompleteAdapter=new PlaceAutoCompleteAdapter(this,mGoogleApiClient,LAT_LNG_BOUNDS,null);
 //        mSearch.setAdapter(mplaceAutoCompleteAdapter);
+        mSearch.setOnItemClickListener(mAutoComplteClickListner);
         mplaceAutoCompleteAdapter1=new PlaceAutocompleteAdapter1(this,mGeoDataClient,LAT_LNG_BOUNDS,null);
         mSearch.setAdapter(mplaceAutoCompleteAdapter1);
         mSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -215,6 +236,34 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         {
             Log.d(TAG,"getDeviceLocation:SecurityException:"+e.getMessage());
         }
+    }
+    private void moveCamera(LatLng latLng,float zoom,PlaceInfo placeInfo)
+    {
+        Log.d(TAG,"moveCamera:moving the camera to:lat"+latLng.latitude+",lng:"+latLng.longitude);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoom));
+        mMap.clear();
+        if (placeInfo!=null)
+        {
+            try {
+                String snippet="Address:"+placeInfo.getAddress()+"\n"+
+                        "Phone Number:"+placeInfo.getPhoneNumber()+"\n"+
+                        "Website:"+placeInfo.getWebsiteUri()+"\n"+
+                        "Price Rating:"+placeInfo.getRating()+"\n";
+                MarkerOptions options =new MarkerOptions()
+                        .position(latLng)
+                        .title(placeInfo.getName())
+                        .snippet(snippet);
+                mMaker=mMap.addMarker(options);
+//                mMap.addMarker(options);
+            }catch (NullPointerException e)
+            {
+                Log.d(TAG, "moveCamera:NullPointerException " +e);
+            }
+        }else
+            {
+                mMaker=mMap.addMarker(new MarkerOptions().position(latLng));
+            }
+        hidesoftinputkeyboard();
     }
 private void moveCamera(LatLng latLng,float zoom,String title)
 {
@@ -314,8 +363,33 @@ private ResultCallback<PlaceBuffer> mUpdatePlaceDetailCallback=new ResultCallbac
             places.release();
             return;
         }
-        final Place place=places.get(0);
 
+        final Place place=places.get(0);
+        try{
+        mPlace = new PlaceInfo();
+        mPlace.setName(place.getName().toString());
+        Log.d(TAG, "onResult: name: " + place.getName());
+        mPlace.setAddress(place.getAddress().toString());
+        Log.d(TAG, "onResult: address: " + place.getAddress());
+//                mPlace.setAttributions(place.getAttributions().toString());
+//                Log.d(TAG, "onResult: attributions: " + place.getAttributions());
+        mPlace.setId(place.getId());
+        Log.d(TAG, "onResult: id:" + place.getId());
+        mPlace.setLatlng(place.getLatLng());
+        Log.d(TAG, "onResult: latlng: " + place.getLatLng());
+        mPlace.setRating(place.getRating());
+        Log.d(TAG, "onResult: rating: " + place.getRating());
+        mPlace.setPhoneNumber(place.getPhoneNumber().toString());
+        Log.d(TAG, "onResult: phone number: " + place.getPhoneNumber());
+        mPlace.setWebsiteUri(place.getWebsiteUri());
+        Log.d(TAG, "onResult: website uri: " + place.getWebsiteUri());
+
+        Log.d(TAG, "onResult: place: " + mPlace.toString());
+        }catch (NullPointerException e){
+            Log.e(TAG, "onResult: NullPointerException: " + e.getMessage() );
+        }
+        moveCamera(mPlace.getLatlng(),DEFAULT_ZOOM,mPlace);
+        places.release();
     }
 };
 }

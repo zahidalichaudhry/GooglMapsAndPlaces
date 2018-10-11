@@ -1,17 +1,21 @@
 package com.itpvt.googlmapsandplaces.Models;
 
+import android.net.Uri;
+
+import com.google.android.gms.maps.model.LatLng;
+
 public class PlaceInfo
 {
     private String name;
     private String address;
     private String phoneNumber;
     private String id;
-    private String websiteUri;
-    private String latlng;
-    private String rating;
+    private Uri websiteUri;
+    private LatLng latlng;
+    private float rating;
     private String attributions;
 
-    public PlaceInfo(String name, String address, String phoneNumber, String id, String websiteUri, String latlng, String rating, String attributions) {
+    public PlaceInfo(String name, String address, String phoneNumber, String id, Uri websiteUri, LatLng latlng, float rating, String attributions) {
         this.name = name;
         this.address = address;
         this.phoneNumber = phoneNumber;
@@ -20,6 +24,30 @@ public class PlaceInfo
         this.latlng = latlng;
         this.rating = rating;
         this.attributions = attributions;
+    }
+
+    public Uri getWebsiteUri() {
+        return websiteUri;
+    }
+
+    public void setWebsiteUri(Uri websiteUri) {
+        this.websiteUri = websiteUri;
+    }
+
+    public LatLng getLatlng() {
+        return latlng;
+    }
+
+    public void setLatlng(LatLng latlng) {
+        this.latlng = latlng;
+    }
+
+    public float getRating() {
+        return rating;
+    }
+
+    public void setRating(float rating) {
+        this.rating = rating;
     }
 
     public PlaceInfo() {
@@ -58,29 +86,9 @@ public class PlaceInfo
         this.id = id;
     }
 
-    public String getWebsiteUri() {
-        return websiteUri;
-    }
 
-    public void setWebsiteUri(String websiteUri) {
-        this.websiteUri = websiteUri;
-    }
 
-    public String getLatlng() {
-        return latlng;
-    }
 
-    public void setLatlng(String latlng) {
-        this.latlng = latlng;
-    }
-
-    public String getRating() {
-        return rating;
-    }
-
-    public void setRating(String rating) {
-        this.rating = rating;
-    }
 
     public String getAttributions() {
         return attributions;
@@ -97,9 +105,9 @@ public class PlaceInfo
                 ", address='" + address + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", id='" + id + '\'' +
-                ", websiteUri='" + websiteUri + '\'' +
-                ", latlng='" + latlng + '\'' +
-                ", rating='" + rating + '\'' +
+                ", websiteUri=" + websiteUri +
+                ", latlng=" + latlng +
+                ", rating=" + rating +
                 ", attributions='" + attributions + '\'' +
                 '}';
     }
